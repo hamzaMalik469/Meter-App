@@ -1,3 +1,3 @@
 # meter_app
 
-A new Flutter project.
+This app is to manage electric meter units ccnsumption by entering manually meter's latest readings.
