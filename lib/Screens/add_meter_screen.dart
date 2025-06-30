@@ -8,125 +8,131 @@ class AddMeterScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final _formKey = GlobalKey<FormState>();
-    final nameController = TextEditingController();
-    final numberController = TextEditingController();
-    final billingDateController = TextEditingController();
-    final billingReadingController = TextEditingController();
-    final meterProvider = Provider.of<MeterProvider>(context, listen: false);
-
     return Scaffold(
-      appBar: AppBar(title: const Text('Add Meter')),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: AddMeterForm(
-            formKey: _formKey,
-            nameController: nameController,
-            numberController: numberController,
-            billingDateController: billingDateController,
-            billingReadingController: billingReadingController,
-            meterProvider: meterProvider),
+      appBar: AppBar(title: const Text('Add New Meter')),
+      body: const Padding(
+        padding: EdgeInsets.all(16),
+        child: AddMeterForm(),
       ),
     );
   }
 }
 
-class AddMeterForm extends StatelessWidget {
-  const AddMeterForm({
-    super.key,
-    required GlobalKey<FormState> formKey,
-    required this.nameController,
-    required this.numberController,
-    required this.billingDateController,
-    required this.billingReadingController,
-    required this.meterProvider,
-  }) : _formKey = formKey;
+class AddMeterForm extends StatefulWidget {
+  const AddMeterForm({super.key});
 
-  final GlobalKey<FormState> _formKey;
-  final TextEditingController nameController;
-  final TextEditingController numberController;
-  final TextEditingController billingDateController;
-  final TextEditingController billingReadingController;
-  final MeterProvider meterProvider;
+  @override
+  State<AddMeterForm> createState() => _AddMeterFormState();
+}
+
+class _AddMeterFormState extends State<AddMeterForm> {
+  final _formKey = GlobalKey<FormState>();
+  final _nameController = TextEditingController();
+  final _numberController = TextEditingController();
+  final _billingDateController = TextEditingController();
+  final _billingReadingController = TextEditingController();
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _numberController.dispose();
+    _billingDateController.dispose();
+    _billingReadingController.dispose();
+    super.dispose();
+  }
 
   Future<void> _selectDate(BuildContext context) async {
-    final DateTime? pickedDate = await showDatePicker(
+    final DateTime? picked = await showDatePicker(
       context: context,
       initialDate: DateTime.now(),
-      firstDate: DateTime(2000),
+      firstDate: DateTime(2020),
       lastDate: DateTime(2100),
     );
 
-    if (pickedDate != null) {
-      billingDateController.text =
-          "${pickedDate.day}/${pickedDate.month}/${pickedDate.year}";
+    if (picked != null) {
+      _billingDateController.text =
+          "${picked.day}/${picked.month}/${picked.year}";
+    }
+  }
+
+  void _saveMeter(BuildContext context) {
+    if (_formKey.currentState!.validate()) {
+      final provider = Provider.of<MeterProvider>(context, listen: false);
+
+      provider.addMeter(
+        _nameController.text.trim(),
+        _numberController.text.trim(),
+        _billingDateController.text.trim(),
+        double.parse(_billingReadingController.text.trim()),
+      );
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Meter added successfully")),
+      );
+
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (_) => const HomeScreen()),
+      );
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    return Form(
-      key: _formKey,
-      child: Column(
-        children: [
-          TextFormField(
-            controller: nameController,
-            decoration: const InputDecoration(labelText: 'Meter Name'),
-            validator: (value) =>
-                value == null || value.isEmpty ? 'Enter meter name' : null,
-          ),
-          TextFormField(
-            controller: numberController,
-            decoration: const InputDecoration(labelText: 'Meter Number'),
-            validator: (value) =>
-                value == null || value.isEmpty ? 'Enter meter number' : null,
-          ),
-          TextFormField(
-            controller: billingDateController,
-            readOnly: true,
-            decoration: const InputDecoration(
-              labelText: 'Billing Date',
-              suffixIcon: Icon(Icons.calendar_today),
+    return SingleChildScrollView(
+      child: Form(
+        key: _formKey,
+        child: Column(
+          children: [
+            TextFormField(
+              controller: _nameController,
+              decoration: const InputDecoration(labelText: 'Meter Name'),
+              validator: (value) =>
+                  value == null || value.isEmpty ? 'Enter meter name' : null,
             ),
-            onTap: () => _selectDate(context),
-            validator: (value) =>
-                value == null || value.isEmpty ? 'Select billing date' : null,
-          ),
-          TextFormField(
-            controller: billingReadingController,
-            decoration: const InputDecoration(labelText: 'Billing Reading'),
-            keyboardType: TextInputType.number,
-            validator: (value) {
-              if (value == null || value.isEmpty) {
-                return 'Enter billing reading';
-              }
-              final reading = double.tryParse(value);
-              if (reading == null) {
-                return 'Enter a valid number';
-              }
-              return null;
-            },
-          ),
-          const SizedBox(height: 10),
-          ElevatedButton(
-            onPressed: () {
-              if (_formKey.currentState!.validate()) {
-                meterProvider.addMeter(
-                  nameController.text,
-                  numberController.text,
-                  billingDateController.text,
-                  double.parse(billingReadingController.text),
-                );
-                Navigator.pushAndRemoveUntil(
-                  context,
-                  MaterialPageRoute(builder: (context) => const HomeScreen()),
-                  (route) => false,
-                );
-              }
-            },
-            child: const Text('Save Meter'),
-          )
-        ],
+            const SizedBox(height: 12),
+            TextFormField(
+              controller: _numberController,
+              decoration: const InputDecoration(labelText: 'Meter Number'),
+              validator: (value) =>
+                  value == null || value.isEmpty ? 'Enter meter number' : null,
+            ),
+            const SizedBox(height: 12),
+            TextFormField(
+              controller: _billingDateController,
+              readOnly: true,
+              onTap: () => _selectDate(context),
+              decoration: const InputDecoration(
+                labelText: 'Billing Date',
+                suffixIcon: Icon(Icons.calendar_today),
+              ),
+              validator: (value) =>
+                  value == null || value.isEmpty ? 'Select billing date' : null,
+            ),
+            const SizedBox(height: 12),
+            TextFormField(
+              controller: _billingReadingController,
+              decoration: const InputDecoration(labelText: 'Billing Reading'),
+              keyboardType: TextInputType.number,
+              validator: (value) {
+                if (value == null || value.isEmpty) {
+                  return 'Enter billing reading';
+                }
+                final reading = double.tryParse(value);
+                return reading == null ? 'Enter valid number' : null;
+              },
+            ),
+            const SizedBox(height: 24),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                icon: const Icon(Icons.save),
+                label: const Text("Save Meter"),
+                onPressed: () => _saveMeter(context),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

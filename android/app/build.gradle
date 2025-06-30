@@ -1,19 +1,23 @@
 plugins {
-    id "com.android.application"
-    id "kotlin-android"
-    // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
-    id "dev.flutter.flutter-gradle-plugin"
-    id 'com.google.gms.google-services'
-}
-
-dependencies{
-    implementation platform('com.google.firebase:firebase-bom:33.12.0')
+    id("com.android.application")
+    id("org.jetbrains.kotlin.android")
+    id("dev.flutter.flutter-gradle-plugin")
+    id("com.google.gms.google-services") // ✅ Firebase plugin
 }
 
 android {
     namespace = "com.example.meter_app"
-    compileSdk = flutter.compileSdkVersion
-    ndkVersion = flutter.ndkVersion
+    compileSdk = 35 // or flutter.compileSdkVersion
+
+    ndkVersion = "27.0.12077973" // or use flutter.ndkVersion if declared
+
+    defaultConfig {
+        applicationId = "com.example.meter_app"
+        minSdk = 23 // or flutter.minSdkVersion
+        targetSdk = 35 // or flutter.targetSdkVersion
+        versionCode = 1 // or flutter.versionCode
+        versionName = "1.0.0" // or flutter.versionName
+    }
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_1_8
@@ -21,29 +25,26 @@ android {
     }
 
     kotlinOptions {
-        jvmTarget = JavaVersion.VERSION_1_8
-    }
-
-    defaultConfig {
-        // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
-        applicationId = "com.example.meter_app"
-        // You can update the following values to match your application needs.
-        // For more information, see: https://flutter.dev/to/review-gradle-config.
-        minSdk = flutter.minSdkVersion
-        targetSdk = flutter.targetSdkVersion
-        versionCode = flutter.versionCode
-        versionName = flutter.versionName
+        jvmTarget = "1.8"
     }
 
     buildTypes {
-        release {
-            // TODO: Add your own signing config for the release build.
-            // Signing with the debug keys for now, so `flutter run --release` works.
-            signingConfig = signingConfigs.debug
-        }
+    getByName("release") {
+        minifyEnabled = false // ✅ Correct Kotlin DSL
+        shrinkResources = false
+        signingConfig = signingConfigs.getByName("debug")
     }
+}
+
 }
 
 flutter {
     source = "../.."
+}
+
+dependencies {
+    implementation(platform("com.google.firebase:firebase-bom:33.16.0"))
+    // Add more Firebase dependencies as needed, e.g.:
+    // implementation("com.google.firebase:firebase-auth")
+    // implementation("com.google.firebase:firebase-firestore")
 }
