@@ -21,8 +21,12 @@ class _ReadingsScreenState extends State<ReadingsScreen> {
   void didChangeDependencies() {
     super.didChangeDependencies();
     if (!_isInitialized) {
-      Provider.of<MeterProvider>(context, listen: false)
-          .fetchReadings(widget.meter.id);
+      // Provider.of<MeterProvider>(context, listen: false)
+      //     .fetchReadings(widget.meter.id);
+
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        context.read<MeterProvider>().fetchReadings(widget.meter.id);
+      });
       _isInitialized = true;
     }
   }
@@ -120,12 +124,44 @@ class _ReadingsScreenState extends State<ReadingsScreen> {
     }
   }
 
+  void _confirmDeleteMeter(BuildContext context, String readingId) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text("Delete Reading"),
+        content: const Text("Are you sure you want to delete this readings?"),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text("Cancel"),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Provider.of<MeterProvider>(context, listen: false)
+                  .deleteReading(widget.meter.id, readingId);
+              Navigator.pop(context);
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text("Reading deleted")),
+              );
+            },
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+            child: const Text("Delete"),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('Meter Readings')),
       body: Consumer<MeterProvider>(
         builder: (context, provider, _) {
+          if (provider.isLoading) {
+            return const Center(child: CircularProgressIndicator());
+          }
+
           if (provider.isError) {
             return const Center(child: Text('Error fetching readings.'));
           }
@@ -162,7 +198,8 @@ class _ReadingsScreenState extends State<ReadingsScreen> {
                       Text(
                         dateTime,
                         style: const TextStyle(
-                            fontSize: 13, color: Colors.black87),
+                          fontSize: 13,
+                        ),
                       ),
                       const SizedBox(height: 2),
                       Text(
@@ -183,12 +220,8 @@ class _ReadingsScreenState extends State<ReadingsScreen> {
                       ),
                       IconButton(
                         icon: const Icon(Icons.delete, color: Colors.red),
-                        onPressed: () async {
-                          await provider.deleteReading(
-                              widget.meter.id, reading.id);
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text("Reading deleted")),
-                          );
+                        onPressed: () {
+                          _confirmDeleteMeter(context, reading.id);
                         },
                       ),
                     ],

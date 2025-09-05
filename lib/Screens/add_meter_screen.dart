@@ -28,6 +28,7 @@ class AddMeterForm extends StatefulWidget {
 class _AddMeterFormState extends State<AddMeterForm> {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
+  final _ownerController = TextEditingController();
   final _numberController = TextEditingController();
   final _billingDateController = TextEditingController();
   final _billingReadingController = TextEditingController();
@@ -61,6 +62,7 @@ class _AddMeterFormState extends State<AddMeterForm> {
 
       provider.addMeter(
         _nameController.text.trim(),
+        _ownerController.text.trim(),
         _numberController.text.trim(),
         _billingDateController.text.trim(),
         double.parse(_billingReadingController.text.trim()),
@@ -70,9 +72,10 @@ class _AddMeterFormState extends State<AddMeterForm> {
         const SnackBar(content: Text("Meter added successfully")),
       );
 
-      Navigator.pushReplacement(
+      Navigator.pushAndRemoveUntil(
         context,
         MaterialPageRoute(builder: (_) => const HomeScreen()),
+        (route) => false,
       );
     }
   }
@@ -84,6 +87,13 @@ class _AddMeterFormState extends State<AddMeterForm> {
         key: _formKey,
         child: Column(
           children: [
+            TextFormField(
+              controller: _ownerController,
+              decoration: const InputDecoration(labelText: 'Owner Name'),
+              validator: (value) =>
+                  value == null || value.isEmpty ? 'Enter Owner name' : null,
+            ),
+            const SizedBox(height: 12),
             TextFormField(
               controller: _nameController,
               decoration: const InputDecoration(labelText: 'Meter Name'),

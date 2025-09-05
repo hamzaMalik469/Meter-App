@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:meter_app/Screens/all_reading_screen.dart';
 import 'package:meter_app/Screens/home_screen.dart';
 import 'package:provider/provider.dart';
 import '../models/meter_model.dart';
@@ -60,31 +61,41 @@ class _MeterDetailScreenState extends State<MeterDetailScreen> {
     });
   }
 
-  void _saveReading(BuildContext context) {
-    if (!_formKey.currentState!.validate() || selectedDateTime == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Please complete all fields")),
+  void _saveReading(BuildContext context) async {
+    try {
+      if (!_formKey.currentState!.validate() || selectedDateTime == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Please complete all fields")),
+        );
+        return;
+      }
+
+      final latestReading = double.parse(_latestReadingController.text.trim());
+      final readingDateStr = _dateTimeController.text.trim();
+
+      final provider = Provider.of<MeterProvider>(context, listen: false);
+      provider.updateLatestReading(
+        widget.meter.id,
+        latestReading,
+        readingDateStr,
       );
-      return;
+      await Future.delayed(const Duration(milliseconds: 300));
+
+      Navigator.pushAndRemoveUntil(
+        context,
+        MaterialPageRoute(
+          builder: (_) => const HomeScreen(),
+        ),
+        (route) => false,
+      );
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Reading saved successfully")),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context)
+          .showSnackBar(const SnackBar(content: Text("Something went wrong")));
     }
-
-    final latestReading = double.parse(_latestReadingController.text.trim());
-    final readingDateStr = _dateTimeController.text.trim();
-
-    Provider.of<MeterProvider>(context, listen: false).updateLatestReading(
-      widget.meter.id,
-      latestReading,
-      readingDateStr,
-    );
-
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(builder: (_) => const HomeScreen()),
-    );
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text("Reading saved successfully")),
-    );
   }
 
   @override
@@ -101,7 +112,7 @@ class _MeterDetailScreenState extends State<MeterDetailScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Billing Reading: ${meter.billingReading.toStringAsFixed(1)}',
+                'Bill Reading: ${meter.billingReading.toStringAsFixed(1)}',
                 style: const TextStyle(fontWeight: FontWeight.w600),
               ),
               const SizedBox(height: 16),
@@ -113,8 +124,12 @@ class _MeterDetailScreenState extends State<MeterDetailScreen> {
                   if (value == null || value.trim().isEmpty) {
                     return 'Enter latest reading';
                   }
+
                   final parsed = double.tryParse(value.trim());
-                  if (parsed == null) return 'Enter valid number';
+                  if (parsed == null || parsed < meter.billingReading) {
+                    return 'Must greater than bill reading!';
+                  }
+
                   return null;
                 },
               ),

@@ -1,18 +1,33 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../Providers/auth_provider.dart';
-import 'login_screen.dart'; // ✅ Make sure this is imported
+import 'login_screen.dart';
 
-class SignupScreen extends StatelessWidget {
+class SignupScreen extends StatefulWidget {
   const SignupScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    final usernameController = TextEditingController();
-    final emailController = TextEditingController();
-    final passwordController = TextEditingController();
-    final formKey = GlobalKey<FormState>();
+  State<SignupScreen> createState() => _SignupScreenState();
+}
 
+class _SignupScreenState extends State<SignupScreen> {
+  final usernameController = TextEditingController();
+  final emailController = TextEditingController();
+  final passwordController = TextEditingController();
+  final formKey = GlobalKey<FormState>();
+
+  bool obscure = true; // 👁️ control password visibility
+
+  @override
+  void dispose() {
+    usernameController.dispose();
+    emailController.dispose();
+    passwordController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final authProvider = Provider.of<AuthProvider>(context);
 
     return Scaffold(
@@ -41,6 +56,8 @@ class SignupScreen extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: 24),
+
+                    // Username
                     TextFormField(
                       controller: usernameController,
                       decoration: const InputDecoration(
@@ -53,6 +70,8 @@ class SignupScreen extends StatelessWidget {
                           : null,
                     ),
                     const SizedBox(height: 16),
+
+                    // Email
                     TextFormField(
                       controller: emailController,
                       decoration: const InputDecoration(
@@ -71,25 +90,42 @@ class SignupScreen extends StatelessWidget {
                       },
                     ),
                     const SizedBox(height: 16),
+
+                    // Password with toggle
                     TextFormField(
                       controller: passwordController,
-                      obscureText: true,
-                      decoration: const InputDecoration(
+                      obscureText: obscure,
+                      decoration: InputDecoration(
                         labelText: 'Password',
-                        border: OutlineInputBorder(),
-                        prefixIcon: Icon(Icons.lock),
+                        border: const OutlineInputBorder(),
+                        prefixIcon: const Icon(Icons.lock),
+                        suffixIcon: IconButton(
+                          icon: Icon(
+                            obscure ? Icons.visibility_off : Icons.visibility,
+                          ),
+                          onPressed: () {
+                            setState(() {
+                              obscure = !obscure;
+                            });
+                          },
+                        ),
                       ),
                       validator: (value) => value == null || value.length < 6
                           ? 'Password must be at least 6 characters'
                           : null,
                     ),
+
                     const SizedBox(height: 24),
+
+                    // Error Message
                     if (authProvider.errorMessage != null)
                       Text(
                         authProvider.errorMessage!,
                         style: const TextStyle(color: Colors.red),
                       ),
                     const SizedBox(height: 8),
+
+                    // Sign Up button
                     authProvider.isLoading
                         ? const CircularProgressIndicator()
                         : SizedBox(
@@ -105,13 +141,16 @@ class SignupScreen extends StatelessWidget {
                                       passwordController.text.trim(),
                                       usernameController.text.trim(),
                                     );
-                                    Navigator.pop(context); // go back to login
+                                    Navigator.pop(context); // back to login
                                   } catch (_) {}
                                 }
                               },
                             ),
                           ),
+
                     const SizedBox(height: 20),
+
+                    // Already have account
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
@@ -121,7 +160,8 @@ class SignupScreen extends StatelessWidget {
                             Navigator.pushReplacement(
                               context,
                               MaterialPageRoute(
-                                  builder: (_) => const LoginScreen()),
+                                builder: (_) => const LoginScreen(),
+                              ),
                             );
                           },
                           child: const Text("Login"),

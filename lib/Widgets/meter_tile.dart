@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
+import 'package:meter_app/Screens/mepco_bill_page.dart';
 import 'package:meter_app/models/meter_model.dart';
 import 'package:meter_app/Screens/all_reading_screen.dart';
 import 'package:meter_app/providers/meter_provider.dart';
@@ -21,6 +23,13 @@ class MeterTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+
+    // Dynamic font sizes
+    final double titleFont = screenWidth * 0.045; // ~16–18
+    final double subtitleFont = screenWidth * 0.038; // ~13–15
+    final double smallFont = screenWidth * 0.032; // ~11–13
+
     String formatDateTime(String input) {
       try {
         final DateTime dateTime = DateFormat('d/M/yyyy h:mm a').parse(input);
@@ -37,107 +46,210 @@ class MeterTile extends StatelessWidget {
 
     return Card(
       elevation: 6,
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      shadowColor: Colors.blue.withOpacity(0.2),
+      margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
       child: InkWell(
+        borderRadius: BorderRadius.circular(18),
         onTap: () {
           Navigator.push(
             context,
-            MaterialPageRoute(
-              builder: (_) => ReadingsScreen(meter: meter),
-            ),
+            MaterialPageRoute(builder: (_) => ReadingsScreen(meter: meter)),
           );
         },
-        borderRadius: BorderRadius.circular(16),
         child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Row(
+          padding: EdgeInsets.all(screenWidth * 0.04),
+          child: Column(
             children: [
-              // Left Meter Icon Column
-              Container(
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  color: Colors.blue.shade100,
-                  shape: BoxShape.circle,
-                ),
-                child: const Icon(Icons.speed, color: Colors.blue, size: 28),
-              ),
-
-              const SizedBox(width: 16),
-
-              // Expanded Meter Info Column
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      meter.name,
-                      style: const TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      meter.number,
-                      style: const TextStyle(
-                        fontSize: 14,
-                        color: Colors.black54,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Row(
-                      children: [
-                        const Icon(Icons.bolt, size: 16, color: Colors.orange),
-                        const SizedBox(width: 6),
-                        Consumer<MeterProvider>(
-                          builder: (BuildContext context, MeterProvider value,
-                              Widget? child) {
-                            return Text(
-                              "Used: ${meter.consumedUnits.toStringAsFixed(1)} units",
-                              style: const TextStyle(fontSize: 14),
-                            );
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Left Column
+                  Column(
+                    children: [
+                      Transform.scale(
+                        scale: 0.8,
+                        child: Switch(
+                          value: meter.isOn,
+                          onChanged: (value) {
+                            Provider.of<MeterProvider>(context, listen: false)
+                                .toggleMeterStatus(meter.id, value);
+                            Provider.of<MeterProvider>(context, listen: false)
+                                .fetchMeters();
                           },
                         ),
-                      ],
-                    ),
-                    Row(
-                      children: [
-                        const Icon(Icons.calendar_today,
-                            size: 14, color: Colors.grey),
-                        const SizedBox(width: 6),
-                        Text(
-                          "Billing: $dateTime",
-                          style: const TextStyle(fontSize: 13),
-                        ),
-                      ],
-                    ),
-                    Row(
-                      children: [
-                        const Icon(Icons.access_time,
-                            size: 14, color: Colors.grey),
-                        const SizedBox(width: 6),
-                        Text(
-                          "Due in: $remainingDays days",
-                          style: TextStyle(
-                            fontSize: 13,
-                            color: remainingDays <= 3
-                                ? Colors.red
-                                : Colors.green[700],
-                            fontWeight: FontWeight.w500,
+                      ),
+                      Container(
+                        padding: EdgeInsets.all(screenWidth * 0.03),
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            colors: [
+                              Colors.blue.shade300,
+                              Colors.blue.shade600
+                            ],
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
                           ),
+                          shape: BoxShape.circle,
+                        ),
+                        child: Icon(Icons.bolt,
+                            color: Colors.white, size: screenWidth * 0.07),
+                      ),
+                      SizedBox(height: screenWidth * 0.02),
+                      Text(
+                        meter.consumedUnits < 0
+                            ? "0"
+                            : meter.consumedUnits.toStringAsFixed(1),
+                        style: TextStyle(
+                          fontSize: subtitleFont,
+                          color: meter.consumedUnits > 180
+                              ? Colors.red
+                              : Colors.green.shade700,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
+
+                  SizedBox(width: screenWidth * 0.04),
+
+                  // Expanded Info
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Expanded(
+                              flex: 2,
+                              child: Text(
+                                meter.name,
+                                style: TextStyle(
+                                  fontSize: titleFont,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                            IconButton(
+                              constraints: const BoxConstraints(),
+                              padding: EdgeInsets.zero,
+                              onPressed: () {
+                                Provider.of<MeterProvider>(context,
+                                        listen: false)
+                                    .toggleMeterPinStatus(
+                                        meter.id, !meter.isPin);
+                                Provider.of<MeterProvider>(context,
+                                        listen: false)
+                                    .fetchMeters();
+                              },
+                              icon: Icon(
+                                meter.isPin
+                                    ? Icons.push_pin
+                                    : Icons.push_pin_outlined,
+                                color: meter.isPin
+                                    ? Colors.blueAccent
+                                    : Colors.grey,
+                                size: screenWidth * 0.055,
+                              ),
+                            ),
+                          ],
+                        ),
+                        Row(
+                          children: [
+                            Text("# ${meter.number}",
+                                style: TextStyle(fontSize: subtitleFont)),
+                            IconButton(
+                              constraints: const BoxConstraints(),
+                              padding: EdgeInsets.zero,
+                              icon: Icon(Icons.copy,
+                                  color: Colors.blue,
+                                  size: screenWidth * 0.045),
+                              onPressed: () {
+                                Clipboard.setData(
+                                    ClipboardData(text: meter.number));
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text('Copied to clipboard!'),
+                                    duration: Duration(seconds: 2),
+                                  ),
+                                );
+                              },
+                              tooltip: 'Copy Number',
+                            )
+                          ],
+                        ),
+                        _buildInfoRow(
+                            Icons.speed,
+                            "Reading: ${meter.billingReading.toStringAsFixed(0)}",
+                            subtitleFont),
+                        _buildInfoRow(Icons.calendar_today,
+                            "Billing: $dateTime", subtitleFont),
+                        _buildInfoRow(
+                          Icons.access_time,
+                          "Due in: $remainingDays days",
+                          subtitleFont,
+                          color: remainingDays <= 3
+                              ? Colors.red
+                              : Colors.green[700],
                         ),
                       ],
                     ),
-                  ],
-                ),
+                  ),
+                ],
               ),
 
-              // Trailing Navigation Arrow
-              const Icon(Icons.arrow_forward_ios, size: 18, color: Colors.grey),
+              SizedBox(height: screenWidth * 0.04),
+
+              // Bill Button
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  icon: const Icon(Icons.receipt_long),
+                  label: const Text("View MEPCO Bill"),
+                  style: ElevatedButton.styleFrom(
+                    padding:
+                        EdgeInsets.symmetric(vertical: screenWidth * 0.035),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12)),
+                    backgroundColor: Colors.blue.shade700,
+                    foregroundColor: Colors.white,
+                    textStyle: TextStyle(fontSize: subtitleFont),
+                  ),
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) =>
+                            MepcoBillLauncher(referenceNumber: meter.number),
+                      ),
+                    );
+                  },
+                ),
+              ),
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildInfoRow(IconData icon, String text, double fontSize,
+      {Color? color}) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 2),
+      child: Row(
+        children: [
+          Icon(icon, size: fontSize + 1, color: Colors.grey),
+          const SizedBox(width: 6),
+          Flexible(
+            child: Text(
+              text,
+              style: TextStyle(fontSize: fontSize, color: color),
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+        ],
       ),
     );
   }

@@ -1,6 +1,8 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:hive_flutter/adapters.dart';
+import 'package:meter_app/Providers/theme_provider.dart';
+import 'package:meter_app/Theme/theme.dart';
 import 'package:meter_app/models/meter_model.dart';
 import 'package:meter_app/models/reading_model.dart';
 import 'package:meter_app/Providers/auth_gate.dart';
@@ -23,6 +25,7 @@ void main() async {
     MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (context) => AuthProvider()),
+        ChangeNotifierProvider(create: (context) => ThemeProvider()),
         ChangeNotifierProvider(
           create: (context) => MeterProvider(
             meterBox: meterBox,
@@ -40,9 +43,13 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final themeProvider = Provider.of<ThemeProvider>(context);
     return MaterialApp(
+      debugShowCheckedModeBanner: false,
       title: 'Meter App',
-      theme: ThemeData(primarySwatch: Colors.blue),
+      themeMode: themeProvider.themeMode,
+      theme: AppTheme.lightTheme(),
+      darkTheme: AppTheme.darkTheme(),
       home: const AuthGate(),
     );
   }

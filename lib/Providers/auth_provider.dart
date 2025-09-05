@@ -11,10 +11,19 @@ class AuthProvider with ChangeNotifier {
 
   bool _isLoading = false;
   String? _errorMessage;
-  bool obscure = false;
+  bool _obscure = false;
 
   bool get isLoading => _isLoading;
   String? get errorMessage => _errorMessage;
+  bool? get obscure => _obscure;
+
+  Map<String, dynamic>? _userData;
+  Map<String, dynamic>? get userData => _userData;
+
+  void setObscure() {
+    _obscure = !_obscure;
+    notifyListeners();
+  }
 
   /// Set loading and notify
   void _setLoading(bool value) {
@@ -26,6 +35,22 @@ class AuthProvider with ChangeNotifier {
   void _setError(String? message) {
     _errorMessage = message;
     notifyListeners();
+  }
+
+  /// Fetch user data from Firestore
+  Future<void> fetchUserData() async {
+    if (user == null) return;
+    try {
+      DocumentSnapshot doc =
+          await _firestore.collection('users').doc(user!.uid).get();
+      if (doc.exists) {
+        _userData = doc.data() as Map<String, dynamic>;
+
+        notifyListeners();
+      }
+    } catch (e) {
+      _setError('Failed to load user data');
+    }
   }
 
   /// Sign up and store user info in Firestore
@@ -46,6 +71,7 @@ class AuthProvider with ChangeNotifier {
         'createdAt': DateTime.now(),
       });
 
+      await fetchUserData(); // Fetch after signup
       _setLoading(false);
     } on FirebaseAuthException catch (e) {
       _setLoading(false);
@@ -65,6 +91,7 @@ class AuthProvider with ChangeNotifier {
 
     try {
       await _auth.signInWithEmailAndPassword(email: email, password: password);
+      await fetchUserData(); // Fetch after login
     } on FirebaseAuthException catch (e) {
       _setError(e.message ?? 'Login failed');
       rethrow;
@@ -79,6 +106,7 @@ class AuthProvider with ChangeNotifier {
   /// Logout the current user
   Future<void> logout() async {
     await _auth.signOut();
+    _userData = null;
     notifyListeners();
   }
 

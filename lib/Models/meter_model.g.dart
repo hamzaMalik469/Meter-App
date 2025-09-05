@@ -18,6 +18,7 @@ class MeterModelAdapter extends TypeAdapter<MeterModel> {
     };
     return MeterModel(
       id: fields[0] as String,
+      owner: fields[11] as String,
       name: fields[1] as String,
       number: fields[2] as String,
       billingDate: fields[3] as String,
@@ -26,13 +27,15 @@ class MeterModelAdapter extends TypeAdapter<MeterModel> {
       consumedUnits: fields[6] as double,
       readingDate: fields[7] as String,
       synced: fields[8] as bool,
+      isOn: fields[9] as bool,
+      isPin: fields[10] as bool,
     );
   }
 
   @override
   void write(BinaryWriter writer, MeterModel obj) {
     writer
-      ..writeByte(9)
+      ..writeByte(12)
       ..writeByte(0)
       ..write(obj.id)
       ..writeByte(1)
@@ -50,7 +53,13 @@ class MeterModelAdapter extends TypeAdapter<MeterModel> {
       ..writeByte(7)
       ..write(obj.readingDate)
       ..writeByte(8)
-      ..write(obj.synced);
+      ..write(obj.synced)
+      ..writeByte(9)
+      ..write(obj.isOn)
+      ..writeByte(10)
+      ..write(obj.isPin)
+      ..writeByte(11)
+      ..write(obj.owner);
   }
 
   @override

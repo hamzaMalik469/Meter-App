@@ -3,16 +3,28 @@ import 'package:provider/provider.dart';
 import '../Providers/auth_provider.dart';
 import 'sign_up_screen.dart';
 
-class LoginScreen extends StatelessWidget {
+class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    final emailController = TextEditingController();
-    final passwordController = TextEditingController();
-    final authProvider = Provider.of<AuthProvider>(context);
+  State<LoginScreen> createState() => _LoginScreenState();
+}
 
-    final formKey = GlobalKey<FormState>();
+class _LoginScreenState extends State<LoginScreen> {
+  final emailController = TextEditingController();
+  final passwordController = TextEditingController();
+  final formKey = GlobalKey<FormState>();
+
+  @override
+  void dispose() {
+    emailController.dispose();
+    passwordController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final authProvider = Provider.of<AuthProvider>(context);
 
     return Scaffold(
       backgroundColor: Colors.grey[100],
@@ -32,7 +44,7 @@ class LoginScreen extends StatelessWidget {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     const Text(
-                      'Wellcome Back!',
+                      'Welcome Back!',
                       style: TextStyle(
                         fontSize: 28,
                         fontWeight: FontWeight.bold,
@@ -40,6 +52,8 @@ class LoginScreen extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: 24),
+
+                    // Email
                     TextFormField(
                       controller: emailController,
                       decoration: const InputDecoration(
@@ -58,28 +72,50 @@ class LoginScreen extends StatelessWidget {
                       },
                     ),
                     const SizedBox(height: 16),
-                    TextFormField(
-                      controller: passwordController,
-                      decoration: const InputDecoration(
-                        labelText: 'Password',
-                        border: OutlineInputBorder(),
-                        prefixIcon: Icon(Icons.lock),
-                      ),
-                      obscureText: true,
-                      validator: (value) {
-                        if (value == null || value.length < 6) {
-                          return 'Password must be at least 6 characters';
-                        }
-                        return null;
+
+                    // Password with toggle
+                    Consumer<AuthProvider>(
+                      builder: (context, provider, child) {
+                        return TextFormField(
+                          controller: passwordController,
+                          decoration: InputDecoration(
+                            labelText: 'Password',
+                            border: const OutlineInputBorder(),
+                            prefixIcon: const Icon(Icons.lock),
+                            suffixIcon: IconButton(
+                              icon: Icon(
+                                provider.obscure!
+                                    ? Icons.visibility_off
+                                    : Icons.visibility,
+                              ),
+                              onPressed: () {
+                                provider.setObscure();
+                              },
+                            ),
+                          ),
+                          obscureText: provider.obscure!,
+                          validator: (value) {
+                            if (value == null || value.length < 6) {
+                              return 'Password must be at least 6 characters';
+                            }
+                            return null;
+                          },
+                        );
                       },
                     ),
+
                     const SizedBox(height: 24),
+
+                    // Error message
                     if (authProvider.errorMessage != null)
                       Text(
                         authProvider.errorMessage!,
                         style: const TextStyle(color: Colors.red),
                       ),
+
                     const SizedBox(height: 8),
+
+                    // Login button
                     authProvider.isLoading
                         ? const CircularProgressIndicator()
                         : SizedBox(
@@ -94,21 +130,23 @@ class LoginScreen extends StatelessWidget {
                                       emailController.text.trim(),
                                       passwordController.text.trim(),
                                     );
-                                    // Navigate to Home or AuthGate will handle it
-                                  } catch (_) {
-                                    // Error already handled by provider
-                                  }
+                                    // Navigation handled by AuthGate
+                                  } catch (_) {}
                                 }
                               },
                             ),
                           ),
+
                     const SizedBox(height: 16),
+
+                    // Signup link
                     TextButton(
                       onPressed: () {
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                              builder: (_) => const SignupScreen()),
+                            builder: (_) => const SignupScreen(),
+                          ),
                         );
                       },
                       child: const Text("Don't have an account? Sign Up"),

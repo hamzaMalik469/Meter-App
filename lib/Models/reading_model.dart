@@ -1,6 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:hive/hive.dart';
-
 part 'reading_model.g.dart';
 
 @HiveType(typeId: 1)
@@ -24,7 +23,7 @@ class ReadingModel {
   final String meterId;
 
   @HiveField(6)
-  bool synced;
+  final bool synced;
 
   ReadingModel({
     required this.id,
@@ -57,5 +56,26 @@ class ReadingModel {
       'meterId': meterId,
       'synced': synced,
     };
+  }
+
+  /// CopyWith method for immutability
+  ReadingModel copyWith({
+    String? id,
+    double? latestReading,
+    double? consumedUnits,
+    String? readingDate,
+    DateTime? timestamp,
+    String? meterId,
+    bool? synced,
+  }) {
+    return ReadingModel(
+      id: id ?? this.id,
+      latestReading: latestReading ?? this.latestReading,
+      consumedUnits: consumedUnits ?? this.consumedUnits,
+      readingDate: readingDate ?? this.readingDate,
+      timestamp: timestamp ?? this.timestamp,
+      meterId: meterId ?? this.meterId,
+      synced: synced ?? this.synced,
+    );
   }
 }
